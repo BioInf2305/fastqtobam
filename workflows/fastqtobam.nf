@@ -48,6 +48,8 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
+include { TRIMGALORE                  } from '../modules/nf-core/trimgalore/main'
+include { SICKLE                      } from '../modules/nf-core/sickle/main'
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
@@ -76,8 +78,14 @@ workflow FASTQTOBAM {
     //
     // MODULE: Run FastQC
     //
-    FASTQC (
+    TRIMGALORE(
         INPUT_CHECK.out.reads
+    )
+    SICKLE(
+        TRIMGALORE.out.reads.combine(["sanger"])
+    )
+    FASTQC (
+        SICKLE.out.paired_trimmed,
     )
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
