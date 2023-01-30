@@ -38,6 +38,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { FASTA_INDICES } from '../subworkflows/local/fasta_indices'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,6 +53,8 @@ include { TRIMGALORE                  } from '../modules/nf-core/trimgalore/main
 include { SICKLE                      } from '../modules/nf-core/sickle/main'
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
+include { BWA_MEM                     } from '../modules/nf-core/bwa/mem/main'
+include { PICARD_MARKDUPLICATES       } from '../modules/nf-core/picard/markduplicates/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
@@ -76,18 +79,65 @@ workflow FASTQTOBAM {
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //
-    // MODULE: Run FastQC
+    // SUBWORKFLOW: Deals with bwa index and samtools faidx
     //
+    
+    fastaF = Channel.fromPath(params.fasta)
+
+    FASTA_INDICES(
+        fastaF
+     )
+
+    //
+    // MODULE: Run Trimgalore for trimming of adapters
+    //
+    
     TRIMGALORE(
         INPUT_CHECK.out.reads
     )
+
+    //
+    // MODULE: Run sickle for trimming of low-quality reads
+    //
+    
     SICKLE(
-        TRIMGALORE.out.reads.combine(["sanger"])
+        TRIMGALORE.out.reads.combine([params.qual_type])
     )
+
+    //
+    // MODULE: Run fastqc for assessment of read-quality in fastq files
+    //
+
     FASTQC (
-        SICKLE.out.paired_trimmed,
+        SICKLE.out.paired_trimmed
     )
+
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(TRIMGALORE.out.versions.first())
+    ch_versions = ch_versions.mix(SICKLE.out.versions.first())
+
+    //
+    // MODULE: BWA_MEN
+    //
+
+    BWA_MEM(
+        SICKLE.out.paired_trimmed,
+        FASTA_INDICES.out.bwa_idx_meta,
+        params.sort_bam
+    )
+
+    ch_versions = ch_versions.mix(BWA_MEM.out.versions.first())
+
+    //
+    // MODULE: PICARD_MARKDUPLICATES
+    //
+
+    PICARD_MARKDUPLICATES(
+        BWA_MEM.out.bam,
+        fastaF,
+        FASTA_INDICES.out.fa_idx
+    )
+
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
@@ -115,6 +165,7 @@ workflow FASTQTOBAM {
         ch_multiqc_logo.toList()
     )
     multiqc_report = MULTIQC.out.report.toList()
+
 }
 
 /*

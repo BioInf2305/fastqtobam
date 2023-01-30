@@ -45,6 +45,52 @@
                 }
             }
         },
+        "fastq_trimming_and_filtering_options": {
+            "title": "fastq trimming and filtering options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "trim_galore_stringency": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "stringency parameter as implemented in trim_galore"
+                },
+                "qual_type": {
+                    "type": "string",
+                    "default": "sanger",
+                    "description": "type of base quality to be set in sickle trimming"
+                },
+                "qual_threshold": {
+                    "type": "integer",
+                    "default": 20,
+                    "description": "average read quality to be included in final fastq files"
+                },
+                "length_threshold": {
+                    "type": "integer",
+                    "default": 30,
+                    "description": "minimum read length to be included in final fastq files"
+                }
+            }
+        },
+        "alignment_options": {
+            "title": "alignment options",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "sort_bam": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "sorting to be carried out simulatenously the sam file generation in bwa mem"
+                },
+                "remove_duplicates": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Remove duplicates in picard mark duplicates"
+                }
+            }
+        },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
@@ -55,7 +101,8 @@
                     "type": "string",
                     "description": "Name of iGenomes reference.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
+                    "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details.",
+                    "hidden": true
                 },
                 "fasta": {
                     "type": "string",
@@ -80,6 +127,25 @@
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
+                },
+                "skip_bwa_idx": {
+                    "type": "boolean",
+                    "description": "skip generating the bwa index"
+                },
+                "skip_samtools_faidx": {
+                    "type": "boolean",
+                    "description": "skip generating samtools faidx"
+                },
+                "dir_bwa_idx": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "if skipping bwa index provide directory containing bwa idx files"
+                },
+                "samtools_faidx": {
+                    "type": "string",
+                    "pattern": "^\\S+\\.fai$",
+                    "format": "file-path",
+                    "description": "if skipping samtools faidx provide path to the samtools faidx file"
                 }
             }
         },
@@ -280,6 +346,12 @@
     "allOf": [
         {
             "$ref": "#/definitions/input_output_options"
+        },
+        {
+            "$ref": "#/definitions/fastq_trimming_and_filtering_options"
+        },
+        {
+            "$ref": "#/definitions/alignment_options"
         },
         {
             "$ref": "#/definitions/reference_genome_options"
