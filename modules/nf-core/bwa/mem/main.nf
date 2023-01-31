@@ -44,6 +44,8 @@ process BWA_MEM {
         samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
     END_VERSIONS
     """
+    }
+
     else{
 
         """
@@ -63,5 +65,4 @@ process BWA_MEM {
         """
         }
 
-    }
 }
