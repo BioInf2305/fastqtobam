@@ -52,10 +52,12 @@ include { FASTA_INDICES } from '../subworkflows/local/fasta_indices'
 include { TRIMGALORE                  } from '../modules/nf-core/trimgalore/main'
 include { SICKLE                      } from '../modules/nf-core/sickle/main'
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
+include { MULTIQC as MULTIFASTQC      } from '../modules/nf-core/multiqc/main'
 include { BWA_MEM                     } from '../modules/nf-core/bwa/mem/main'
 include { PICARD_MARKDUPLICATES       } from '../modules/nf-core/picard/markduplicates/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { QUALIMAP_BAMQC              } from '../modules/nf-core/qualimap/bamqc/main'
+include { MULTIQC as MULTIBAMQC       } from '../modules/nf-core/multiqc/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -87,6 +89,9 @@ workflow FASTQTOBAM {
     FASTA_INDICES(
         fastaF
      )
+    
+    ch_versions = ch_versions.mix(params.skip_bwa_idx?'':FASTA_INDICES.out.bwa_idx_version)
+    ch_versions = ch_versions.mix(params.skip_samtools_faidx?'':FASTA_INDICES.out.samtools_faidx_version)
 
     //
     // MODULE: Run Trimgalore for trimming of adapters
@@ -120,9 +125,17 @@ workflow FASTQTOBAM {
     // MODULE: BWA_MEN
     //
 
+    SICKLE.out.paired_trimmed
+        .combine(FASTA_INDICES.out.bwa_idx_meta)
+        .set { mem_params }
+
+    mem_in1 = mem_params.map{ metaR, reads, metaI, idx -> tuple(metaR, reads) }
+    mem_in2 = mem_params.map{ metaR, reads, metaI, idx -> tuple(metaI, idx)   }
+    
+
     BWA_MEM(
-        SICKLE.out.paired_trimmed,
-        FASTA_INDICES.out.bwa_idx_meta,
+        mem_in1,
+        mem_in2,
         params.sort_bam
     )
 
@@ -132,10 +145,27 @@ workflow FASTQTOBAM {
     // MODULE: PICARD_MARKDUPLICATES
     //
 
+    BWA_MEM.out.bam
+        .combine(fastaF)
+        .combine(FASTA_INDICES.out.fa_idx)
+        .set{ markduplicates_params }
+
+    markduplicates_in1 = markduplicates_params.map{ metaB, bam, fasF, faIdx -> tuple( metaB, bam )}
+    markduplicates_in2 = markduplicates_params.map{ metaB, bam, fasF, faIdx -> fasF }
+    markduplicates_in3 = markduplicates_params.map{ metaB, bam, fasF, faIdx -> faIdx }
+
     PICARD_MARKDUPLICATES(
-        BWA_MEM.out.bam,
-        fastaF,
-        FASTA_INDICES.out.fa_idx
+        markduplicates_in1,
+        markduplicates_in2,
+        markduplicates_in3
+    )
+
+    ch_versions = ch_versions.mix(PICARD_MARKDUPLICATES.out.versions.first())
+    //
+    // MODULE: QUALIMAP_BAMQC
+    //
+    QUALIMAP_BAMQC(
+        PICARD_MARKDUPLICATES.out.bam
     )
 
 
@@ -144,7 +174,7 @@ workflow FASTQTOBAM {
     )
 
     //
-    // MODULE: MultiQC
+    // MODULE: MULTI_FASTQC
     //
     workflow_summary    = WorkflowFastqtobam.paramsSummaryMultiqc(workflow, summary_params)
     ch_workflow_summary = Channel.value(workflow_summary)
@@ -152,19 +182,32 @@ workflow FASTQTOBAM {
     methods_description    = WorkflowFastqtobam.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description)
     ch_methods_description = Channel.value(methods_description)
 
-    ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multifastqc_files = Channel.empty()
+    ch_multifastqc_files = ch_multifastqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multifastqc_files = ch_multifastqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multifastqc_files = ch_multifastqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multifastqc_files = ch_multifastqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
 
-    MULTIQC (
-        ch_multiqc_files.collect(),
+    ch_multibamqc_files = Channel.empty()
+    ch_multibamqc_files = ch_multibamqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multibamqc_files = ch_multibamqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multibamqc_files = ch_multibamqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multibamqc_files = ch_multibamqc_files.mix(QUALIMAP_BAMQC.out.results.collect{it[1]}.ifEmpty([]))
+
+    MULTIFASTQC (
+        ch_multifastqc_files.collect(),
         ch_multiqc_config.toList(),
         ch_multiqc_custom_config.toList(),
         ch_multiqc_logo.toList()
     )
-    multiqc_report = MULTIQC.out.report.toList()
+    MULTIBAMQC (
+        ch_multibamqc_files.collect(),
+        ch_multiqc_config.toList(),
+        ch_multiqc_custom_config.toList(),
+        ch_multiqc_logo.toList()
+    )
+    multifastqc_report = MULTIFASTQC.out.report.toList()
+    multibamqc_report  = MULTIBAMQC.out.report.toList()
 
 }
 
@@ -176,7 +219,7 @@ workflow FASTQTOBAM {
 
 workflow.onComplete {
     if (params.email || params.email_on_fail) {
-        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
+        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multifastqc_report, multibamqc_report)
     }
     NfcoreTemplate.summary(workflow, params, log)
     if (params.hook_url) {

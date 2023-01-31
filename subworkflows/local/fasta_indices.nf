@@ -24,7 +24,7 @@ workflow FASTA_INDICES{
                 meta.id = "assembly"
                 meta.single_end = false
                 idx_dir = Channel.fromPath( params.dir_bwa_idx, type: 'dir')
-                bwa_idx_meta =  [meta, idx_dir]
+                bwa_idx_meta = idx_dir.map{ dir -> tuple(meta, dir) }
             }
         if ( !params.skip_samtools_faidx ){
                 def meta_sam = [:]
@@ -35,7 +35,6 @@ workflow FASTA_INDICES{
                     faidx_meta_pre
                     )
                 fa_idx = SAMTOOLS_FAIDX.out.fai.map{ meta, fai -> fai}
-                fa_idx.view()
             }
         else{
                 fa_idx = Channel.fromPath( params.samtools_faidx)
@@ -45,6 +44,6 @@ workflow FASTA_INDICES{
     emit:
         bwa_idx_meta                                     // channel: [ val(meta), [ bwa_idx_dir ] ]
         fa_idx                              // channel: path(fa_idx)
-        bwa_idx_version = BWA_INDEX.out.versions? BWA_INDEX.out.versions.first():''
-        samtools_faidx_version = SAMTOOLS_FAIDX.out.versions? SAMTOOLS_FAIDX.out.versions.first():''
+        bwa_idx_version = params.skip_bwa_idx?' ': BWA_INDEX.out.versions.first()
+        samtools_faidx_version = params.skip_samtools_faidx?' ': SAMTOOLS_FAIDX.out.versions.first()
 }

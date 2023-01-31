@@ -51,7 +51,7 @@
             "description": "",
             "default": "",
             "properties": {
-                "trim_galore_stringency": {
+                "trimgalore_stringency": {
                     "type": "integer",
                     "default": 1,
                     "description": "stringency parameter as implemented in trim_galore"
