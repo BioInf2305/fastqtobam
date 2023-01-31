@@ -24,11 +24,15 @@ process BWA_MEM {
     def args2 = task.ext.args2 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def samtools_command = sort_bam ? 'sort' : 'view'
+    def pl_tag = params.pl_rg_tag
+    
+    if ( !params.skip_bwa_rg_tag ){
+
     """
     INDEX=`find -L ./ -name "*.amb" | sed 's/\\.amb\$//'`
 
     bwa mem \\
-        $args \\
+        -R '@RG\\tID:${meta.id}\\tSM:${meta.id}\\tPL:${pl_tag}' \\
         -t $task.cpus \\
         \$INDEX \\
         $reads \\
@@ -40,4 +44,24 @@ process BWA_MEM {
         samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
     END_VERSIONS
     """
+    else{
+
+        """
+        INDEX=`find -L ./ -name "*.amb" | sed 's/\\.amb\$//'`
+
+        bwa mem \\
+            -t $task.cpus \\
+            \$INDEX \\
+            $reads \\
+            | samtools $samtools_command $args2 --threads $task.cpus -o ${prefix}.bam -
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            bwa: \$(echo \$(bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
+            samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
+        END_VERSIONS
+        """
+        }
+
+    }
 }

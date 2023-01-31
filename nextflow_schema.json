@@ -88,6 +88,15 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Remove duplicates in picard mark duplicates"
+                },
+                "skip_bwa_rg_tag": {
+                    "type": "boolean",
+                    "description": "skip adding bwa read group tag, defaut for id and sample is meta.id"
+                },
+                "pl_rg_tag": {
+                    "type": "string",
+                    "default": "illumina",
+                    "description": "PL tag for read group in bwa"
                 }
             }
         },
