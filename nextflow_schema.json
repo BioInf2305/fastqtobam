@@ -97,6 +97,11 @@
                     "type": "string",
                     "default": "illumina",
                     "description": "PL tag for read group in bwa"
+                },
+                "read_name_regex": {
+                    "type": "string",
+                    "default": "null",
+                    "description": "read name pattern used by picard markduplicate, use null in case of NCBI SRA samples"
                 }
             }
         },

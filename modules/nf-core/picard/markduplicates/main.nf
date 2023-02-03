@@ -39,6 +39,7 @@ process PICARD_MARKDUPLICATES {
         --OUTPUT ${prefix}.mrkDup.bam \\
         --REFERENCE_SEQUENCE $fasta \\
         --METRICS_FILE ${prefix}.MarkDuplicates.metrics.txt
+        --TMP_DIR . \\
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

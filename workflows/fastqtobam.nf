@@ -54,7 +54,7 @@ include { SICKLE                      } from '../modules/nf-core/sickle/main'
 include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { MULTIQC as MULTIFASTQC      } from '../modules/nf-core/multiqc/main'
 include { BWA_MEM                     } from '../modules/nf-core/bwa/mem/main'
-include { PICARD_MARKDUPLICATES       } from '../modules/nf-core/picard/markduplicates/main'
+include { SAMBAMBA_MARKDUP            } from '../modules/local/sambamba/markdup/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { QUALIMAP_BAMQC              } from '../modules/nf-core/qualimap/bamqc/main'
 include { MULTIQC as MULTIBAMQC       } from '../modules/nf-core/multiqc/main'
@@ -149,6 +149,7 @@ workflow FASTQTOBAM {
 
     ch_versions = ch_versions.mix(BWA_MEM.out.versions.first())
 
+    /*
     //
     // MODULE: PICARD_MARKDUPLICATES
     //
@@ -167,13 +168,21 @@ workflow FASTQTOBAM {
         markduplicates_in2,
         markduplicates_in3
     )
+    */
 
-    ch_versions = ch_versions.mix(PICARD_MARKDUPLICATES.out.versions.first())
+    //
+    // MODULE: SAMBAMBA_MARKDUP
+    //
+    SAMBAMBA_MARKDUP(
+        BWA_MEM.out.bam
+    )
+
+    ch_versions = ch_versions.mix(SAMBAMBA_MARKDUP.out.versions.first())
     //
     // MODULE: QUALIMAP_BAMQC
     //
     QUALIMAP_BAMQC(
-        PICARD_MARKDUPLICATES.out.bam
+        SAMBAMBA_MARKDUP.out.bam
     )
 
 
