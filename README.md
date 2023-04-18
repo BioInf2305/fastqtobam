@@ -14,7 +14,7 @@
 
 <!-- TODO nf-core: Write a 1-2 sentence summary of what data the pipeline is for and what it does -->
 
-**nf-core/fastqtobam** is a bioinformatics best-practice analysis pipeline for pipeline to generate bam files from paired-end raw fastq files.
+**nf-core/fastqtobam** is a bioinformatics best-practice analysis pipeline to generate bam files from raw paired-end reads fastq files.
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
@@ -26,8 +26,18 @@ On release, automated continuous integration tests run the pipeline on a full-si
 
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+1. Check input samplesheet (list.csv)
+2. Fasta index bwa ([`BWA-MEM`](https://github.com/lh3/bwa))
+3. Fasta indices samtools faidx ([`Samtools`](https://www.htslib.org/))
+4. Quality and adapter trimming ([`TrimGalore`](https://github.com/FelixKrueger/TrimGalore))
+5. Windowed adaptive trimming ([`sickle`](https://github.com/najoshi/sickle))
+6. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+7. Alignment ([`BWA-MEM`](https://github.com/lh3/bwa))
+8. Finding duplicate reads in BAM file ([`Sambamba-markdup`](https://github.com/biod/sambamba))
+9. Quality control of bam alignment data ([`Qualimap bamqc`](http://qualimap.conesalab.org/))
+10. Custom dump (diverse softwareversions)
+11. Present QC for raw reads ([`MultiFastQC`](http://multiqc.info/))
+12. Present QC for bam alignment ([`Multibamqc`](http))
 
 ## Quick Start
 
