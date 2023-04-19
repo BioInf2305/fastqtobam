@@ -18,9 +18,11 @@
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
+The pipeline supports job/batch schedulers/distributed resource management systems (DRMS)/distributed resource managers (DRM), like The Slurm Workload Manager/sbatch.
+
 <!-- TODO nf-core: Add full-sized test dataset and amend the paragraph below if applicable -->
 
-On release, automated continuous integration tests run the pipeline on a full-sized dataset on the AWS cloud infrastructure. This ensures that the pipeline runs on AWS, has sensible resource allocation defaults set to run on real-world datasets, and permits the persistent storage of results to benchmark between pipeline releases and other analysis sources.The results obtained from the full-sized test can be viewed on the [nf-core website](https://nf-co.re/fastqtobam/results).
+On release, automated continuous integration tests run the pipeline on a full-sized dataset on the AWS cloud infrastructure. This ensures that the pipeline runs on AWS, has sensible resource allocation defaults set to run on real-world datasets, and permits the persistent storage of results to benchmark between pipeline releases and other analysis sources. The results obtained from the full-sized test can be viewed on the [nf-core website](https://nf-co.re/fastqtobam/results).
 
 ## Pipeline summary
 
@@ -48,7 +50,7 @@ On release, automated continuous integration tests run the pipeline on a full-si
 3. Download the pipeline and test it on a minimal dataset with a single command:
 
    ```bash
-   nextflow run nf-core/fastqtobam -profile test,YOURPROFILE --outdir <OUTDIR>
+   nextflow run fastqtobam/ -profile test,YOURPROFILE --fasta <path-to-genome.fa> --outdir <OUTDIR>
    ```
 
    Note that some form of configuration will be needed so that Nextflow knows how to fetch the required software. This is usually done in the form of a config profile (`YOURPROFILE` in the example command above). You can chain multiple config profiles in a comma-separated string.
@@ -58,13 +60,30 @@ On release, automated continuous integration tests run the pipeline on a full-si
    > - If you are using `singularity`, please use the [`nf-core download`](https://nf-co.re/tools/#downloading-pipelines-for-offline-use) command to download images first, before running the pipeline. Setting the [`NXF_SINGULARITY_CACHEDIR` or `singularity.cacheDir`](https://www.nextflow.io/docs/latest/singularity.html?#singularity-docker-hub) Nextflow options enables you to store and re-use the images from a central location for future pipeline runs.
    > - If you are using `conda`, it is highly recommended to use the [`NXF_CONDA_CACHEDIR` or `conda.cacheDir`](https://www.nextflow.io/docs/latest/conda.html) settings to store the environments in a central location for future pipeline runs.
 
-4. Start running your own analysis!
+4. Set further configurations, depending on your computational environment, especially if resource managers are used or not.
+   - In `fastqtobam/nextflow.config` one can set an executer (resource manager), with `slurm` as the default.
+   - A computational facility may structure itself in Slurm clusters and Slurm partitions. If used, the pipeline expects the Slurm cluster to be specified outside of nextflow by a separate command:
+
+     ```bash
+     export SLURM_CLUSTERS=<CLUSTER-NAME>
+     ```
+
+   - The Slurm partition is specified in the beginning of `fastqtobam/conf/base.config` under `squeue = "<PARTITION-NAME>"`
+   - Also, in `fastqtobam/conf/base.config` the maximum amount of CPUs/memory/time per `nf-core`-label can be set.
+
+   If no resource manager is used, the respective lines need to be commented out.
+
+5. In `fastqtobam/docs/usage.md` and `fastqtobam/assets/samplesheet.csv`, example input samplesheets are provided to communicate the input structure expected from the pipeline.
+
+6. Start running your own analysis!
 
    <!-- TODO nf-core: Update the example "typical command" below used to run the pipeline -->
 
    ```bash
-   nextflow run nf-core/fastqtobam --input samplesheet.csv --outdir <OUTDIR> --genome GRCh37 -profile <docker/singularity/podman/shifter/charliecloud/conda/institute>
+   nextflow run fastqtobam/ --input samplesheet.csv --outdir <OUTDIR> --fasta <path-to-genome.fna> --samtools_faidx <path-to-genome.fna.fai> -qs 40 -profile <docker/singularity/podman/shifter/charliecloud/conda/institute>
    ```
+
+   The `-qs` parameter specifies the number of parallel sent slurm jobs. If the pipeline is cancelled at some point, it can be continued with the `-resume` flag.
 
 ## Documentation
 
