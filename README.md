@@ -39,7 +39,9 @@ On release, automated continuous integration tests run the pipeline on a full-si
 9. Quality control of bam alignment data ([`Qualimap bamqc`](http://qualimap.conesalab.org/))
 10. Custom dump (diverse softwareversions)
 11. Present QC for raw reads ([`MultiFastQC`](http://multiqc.info/))
-12. Present QC for bam alignment ([`Multibamqc`](http))
+12. Present QC for bam alignment ([`Multibamqc`](http://qualimap.conesalab.org/))
+
+<img src="docs/images/fastqToBamPP.svg" width=60% height=60%>
 
 ## Quick Start
 
