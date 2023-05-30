@@ -55,6 +55,7 @@ include { FASTQC                      } from '../modules/nf-core/fastqc/main'
 include { MULTIQC as MULTIFASTQC      } from '../modules/nf-core/multiqc/main'
 include { BWA_MEM                     } from '../modules/nf-core/bwa/mem/main'
 include { SAMBAMBA_MARKDUP            } from '../modules/local/sambamba/markdup/main'
+include { SAMBAMBA_SORT               } from '../modules/local/sambamba/sort/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { QUALIMAP_BAMQC              } from '../modules/nf-core/qualimap/bamqc/main'
 include { MULTIQC as MULTIBAMQC       } from '../modules/nf-core/multiqc/main'
@@ -169,12 +170,18 @@ workflow FASTQTOBAM {
         markduplicates_in3
     )
     */
+    //
+    // MODULE: SAMBAMBA_sort
+    //
+    SAMBAMBA_SORT(
+        BWA_MEM.out.bam
+    )
 
     //
     // MODULE: SAMBAMBA_MARKDUP
     //
     SAMBAMBA_MARKDUP(
-        BWA_MEM.out.bam
+        SAMBAMBA_SORT.out.bam
     )
 
     ch_versions = ch_versions.mix(SAMBAMBA_MARKDUP.out.versions.first())

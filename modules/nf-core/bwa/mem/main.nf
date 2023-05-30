@@ -2,7 +2,7 @@ process BWA_MEM {
     tag "$meta.id"
     label 'process_high'
 
-    conda "bioconda::bwa=0.7.17 bioconda::samtools=1.16.1"
+    conda "bioconda::bwa=0.7.17 bioconda::samtools=1.17"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mulled-v2-fe8faa35dbf6dc65a0f7f5d4ea12e31a79f73e40:219b6c272b25e7e642ae3ff0bf0c5c81a5135ab4-0' :
         'quay.io/biocontainers/mulled-v2-fe8faa35dbf6dc65a0f7f5d4ea12e31a79f73e40:219b6c272b25e7e642ae3ff0bf0c5c81a5135ab4-0' }"
@@ -23,12 +23,14 @@ process BWA_MEM {
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def samtools_command = sort_bam ? 'sort' : 'view'
+    def samtools_command = sort_bam ? "sort -T ./tmp/${meta.id}" : "view"
     def pl_tag = params.pl_rg_tag
     
     if ( !params.skip_bwa_rg_tag ){
 
     """
+    mkdir tmp
+
     INDEX=`find -L ./ -name "*.amb" | sed 's/\\.amb\$//'`
 
     bwa mem \\

@@ -2,7 +2,7 @@ process QUALIMAP_BAMQC {
     tag "$meta.id"
     label 'process_high'
 
-    conda "bioconda::qualimap=2.2.2d"
+    conda "bioconda::qualimap"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/qualimap:2.2.2d--1' :
         'quay.io/biocontainers/qualimap:2.2.2d--1' }"
