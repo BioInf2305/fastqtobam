@@ -87,20 +87,21 @@ workflow FASTQTOBAM {
     
     fastaF = Channel.fromPath(params.fasta)
 
+
     FASTA_INDICES(
         fastaF
      )
     
     bwaidx_ver = params.skip_bwa_idx?'':FASTA_INDICES.out.bwa_idx_version
 
-    faidx_ver = params.skip_samtools_faidx?'':FASTA_INDICES.out.samtools_faidx_version
+    //faidx_ver = params.skip_samtools_faidx?'':FASTA_INDICES.out.samtools_faidx_version
 
     if ( bwaidx_ver != ''){
         ch_versions = ch_versions.mix(bwaidx_ver)
         }
-    if ( faidx_ver != ''){
-        ch_version = ch_versions.mix(faidx_ver)
-        }
+    //if ( faidx_ver != ''){
+     //   ch_version = ch_versions.mix(faidx_ver)
+     //   }
 
     //
     // MODULE: Run Trimgalore for trimming of adapters
