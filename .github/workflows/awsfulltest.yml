@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
 jobs:
   run-tower:
-    name: Run AWS full tests
-    if: github.repository == 'nf-core/fastqtobam'
+    name: Run AWS tests
+    if: github.repository == 'BioInf2305/fastqtobam'
     runs-on: ubuntu-latest
     steps:
       - name: Launch workflow via tower
@@ -27,7 +27,7 @@ jobs:
             {
               "outdir": "s3://${{ secrets.AWS_S3_BUCKET }}/fastqtobam/results-${{ github.sha }}"
             }
-          profiles: test_full,aws_tower
+          profiles: test,aws_tower
       - uses: actions/upload-artifact@v3
         with:
           name: Tower debug log file
