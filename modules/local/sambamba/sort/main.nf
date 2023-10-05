@@ -20,7 +20,7 @@ process SAMBAMBA_SORT {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}.sorted"
     def avail_mem = 1
     if (!task.memory) {
         log.info '[SAMBAMBA SORT] Available memory not known - defaulting to 1GB. Specify process memory requirements to change this.'
